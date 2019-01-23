@@ -3,7 +3,7 @@ plugins
 这是一个插件管理，钩子，事件管理
 
 Installation
-------------
+------------ 
 
 The preferred way to install this extension is through [composer](http://getcomposer.org/download/).
 
