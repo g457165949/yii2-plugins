@@ -1,5 +1,6 @@
 {
   "name": "zyh/yii2-plugins",
+  "version": "1.0.0",
   "description": "这是一个插件管理，钩子，事件管理",
   "type": "yii2-extension",
   "keywords": ["yii2","extension","plugins"],
