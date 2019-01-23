@@ -1,22 +1,24 @@
 {
-  "name": "zacksleo/yii2-plugin",
-  "description": "yii2 plugin module",
+  "name": "zyh/yii2-plugins",
+  "description": "这是一个插件管理，钩子，事件管理",
   "type": "yii2-extension",
-  "license": "MIT",
+  "keywords": ["yii2","extension","plugins"],
+  "license": "Apache-2.0",
   "authors": [
     {
-      "name": "zacksleo",
-      "email": "zacksleo@gmail.com"
+      "name": "zhangyonghui",
+      "email": "457165949@qq.com"
     }
   ],
-  "minimum-stability": "stable",
   "require": {
-    "yiisoft/yii2": "*",
-    "yiisoft/yii2-bootstrap": "*"
+    "yiisoft/yii2": "*"
   },
   "autoload": {
     "psr-4": {
-      "zacksleo\\yii2\\plugin\\": "src"
+      "zyh\\plugins\\": "src"
     }
+  },
+  "extra": {
+    "bootstrap": "zyh\\plugins\\components\\HookBootstrap"
   }
 }

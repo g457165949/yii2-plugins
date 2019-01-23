@@ -1,79 +1,90 @@
 <?php
-
-namespace zacksleo\yii2\plugin;
-
-use yii;
-use yii\base\Module as BaseModule;
-
 /**
- * portal module definition class.
+ * Created by PhpStorm.
+ * User: admin
+ * Date: 2019/1/18
+ * Time: 上午10:38
  */
-class Module extends BaseModule
+
+namespace zyh\plugins;
+
+
+class Module extends \yii\base\Module 
 {
+    public $realRoute = '';
+
+    public $pluginId = '';
     /**
-     * {@inheritdoc}
+     * 插件路径
+     * @var string
      */
-    public $controllerNamespace = 'zacksleo\yii2\plugin\controllers';
+    public $pluginRoot = '@app/plugins';
 
     /**
-     * @var string source language for translation
+     * 插件命名
+     * @var string
      */
-    public $sourceLanguage = 'en-US';
-
-    /**
-     * {@inheritdoc}
-     */
-    public $layout = 'main';
-    /**
-     * {@inheritdoc}
-     */
-    public $pluginRoot = 'application.plugin';
-
     public $pluginNamespace = 'app\plugins';
 
-    public $moduleDir;
-
-
-    /**
-     * {@inheritdoc}
-     */
     public function init()
     {
         parent::init();
-        $this->moduleDir = dirname(__FILE__);
-        Yii::setAlias('pluginModule', $this->moduleDir);
-        $this->registerTranslations();
+        $route = \Yii::$app->requestedRoute;
+        $array = explode("/", trim($route, "/"));
+        if ($array['0'] == $this->id) {
+            $pluginId = isset($array[1]) ? explode(":", $array[1]) : $array[1];
+            $namespace = join("\\", $pluginId);
+            $this->controllerNamespace = 'app\plugins\\' . strtolower($namespace);
+            $this->pluginId = $pluginId[0];
+            if (count($pluginId) > 1) {
+                unset($array[0]);
+                unset($array[1]);
+                $this->realRoute = join("/", $array);
+            }
+        }
     }
 
-    /**
-     * Registers the translation files.
-     */
-    protected function registerTranslations()
+    public function createController($route)
     {
-        Yii::$app->i18n->translations['zacksleo/yii2/plugin/*'] = [
-            'class' => 'yii\i18n\PhpMessageSource',
-            'sourceLanguage' => $this->sourceLanguage,
-            'basePath' => '@zacksleo/yii2/plugin/messages',
-            'fileMap' => [
-                'zacksleo/yii2/plugin/lang' => 'lang.php',
-                'zacksleo/yii2/plugin/plugin' => 'plugin.php',
-            ],
-        ];
+        if (!$this->realRoute) {
+            $array = explode("/", $route);
+            //兼容 plugins/menu/MenuController.php的情况
+            if (count($array) >= 3 && $array[0] == $array[1]) {
+                $file = $this->pluginNamespace . "/{$array[0]}/" . ucfirst($array[0]) . "Controller.php";
+
+
+                if (is_file($file)) {
+                    array_shift($array);
+                    $route = join("/", $array);
+                }
+            }
+        }
+        $controller = parent::createController($this->realRoute ? $this->realRoute : $route);
+        if (!$controller) {
+            $this->controllerNamespace = $this->controllerNamespace . '\\controllers';
+
+            $route = str_replace($this->pluginId . "/", '', $route, $i);
+            $route = $i == 2 ? $this->pluginId . "/" . $route : $route;
+
+            $controller = parent::createController($this->realRoute ? $this->realRoute : $route);
+        }
+        return $controller;
     }
 
-    /**
-     * Translates a message. This is just a wrapper of Yii::t.
-     *
-     * @see Yii::t
-     *
-     * @param $category
-     * @param $message
-     * @param array $params
-     * @param null $language
-     * @return string
-     */
-    public static function t($category, $message, $params = [], $language = null)
+    public function beforeAction($action)
     {
-        return Yii::t('zacksleo/yii2/plugin/' . $category, $message, $params, $language);
+        $this->setPluginViewPath();
+        if (!parent::beforeAction($action)) {
+            return false;
+        }
+        return true; // or false to not run the action
+    }
+
+    public function setPluginViewPath()
+    {
+        $path = \Yii::getAlias(rtrim($this->pluginRoot,'/')) . DIRECTORY_SEPARATOR . $this->pluginId . DIRECTORY_SEPARATOR . 'views';
+        if (is_dir($path)) {
+            $this->setViewPath($path);
+        }
     }
 }
