@@ -10,7 +10,7 @@ namespace zyh\plugins\models;
 use Yii;
 
 /**
- * This is the model class for table "{{%_addons}}".
+ * This is the model class for table "{{%_plugins}}".
  *
  * @property int $id
  * @property string $name 插件名称
@@ -26,14 +26,14 @@ use Yii;
  * @property string $url 插件路由地址
  * @property int $createtime
  */
-class Addons extends \yii\db\ActiveRecord
+class Plugins extends \yii\db\ActiveRecord
 {
     /**
      * {@inheritdoc}
      */
     public static function tableName()
     {
-        return '{{%_addons}}';
+        return '{{%_plugins}}';
     }
 
     /**

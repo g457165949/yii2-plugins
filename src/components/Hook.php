@@ -24,7 +24,7 @@ class Hook
         if (is_array($behavior) && !is_callable($behavior)) {
             if (!array_key_exists('_overlay', $behavior) || !$behavior['_overlay']) {
                 unset($behavior['_overlay']);
-                self::$tags[$tag] = array_merge(self::$tags[$tag], $behavior);
+                self::$tags[$tag] = array_merge(self::$tags[$tag], [$behavior]);
             } else {
                 unset($behavior['_overlay']);
                 self::$tags[$tag] = $behavior;
@@ -114,7 +114,6 @@ class Hook
             $class  = 'Closure';
         } elseif (is_array($class)) {
             list($class, $method) = $class;
-
             $result = (new $class())->$method($params, $extra);
             $class  = $class . '->' . $method;
         } elseif (is_object($class)) {
@@ -128,7 +127,7 @@ class Hook
             $result = $obj->$method($params, $extra);
         }
 
-        \Yii::debug('behavior_end');
+        \Yii::debug('behavior_end'.$class);
 
         return $result;
     }

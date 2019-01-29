@@ -12,14 +12,15 @@ namespace zyh\plugins\components;
 use yii\base\Application;
 use yii\base\BootstrapInterface;
 use yii\base\Exception;
+use yii\base\InvalidConfigException;
 use yii\helpers\ArrayHelper;
 use yii\helpers\FileHelper;
 
 class HookBootstrap implements BootstrapInterface
 {
-    protected static $hooks = [];
+    protected static $_hooks = [];
 
-    protected static $pluginsDir = [];
+    protected static $_events = [];
 
     /**
      * Bootstrap method to be called during application bootstrap stage.
@@ -27,36 +28,112 @@ class HookBootstrap implements BootstrapInterface
      */
     public function bootstrap($app)
     {
+
+        Hook::listen('plugins_init_begin');
+
         self::hooksBind($app);
+
+        // 加载插件路由
+        Common::initPluginsUrlRules();
+
+        // 加载插件语义
+        Common::initPluginsMessages();
+
+        // 导入所有事件
+        \Yii::createObject([
+            'class' => 'zyh\plugins\components\EventManager',
+            'events' => self::$_events
+        ]);
+
+        /**
+         * 注册一个插件管理后台路由
+         */
+        \Yii::$app->urlManager->addRules([
+            "plugins/<a:\w+>" => "plugins/plugins/<a>",
+        ]);
+
+        Hook::listen('plugins_init_end');
+
+        // 导入所有钩子
+        Hook::import(self::$_hooks);
+
     }
 
+    /**
+     * 检测插件使用前
+     * @param $app
+     * @throws Exception
+     * @throws InvalidConfigException
+     */
+    public static function checkInit($app){
+        if(!\Yii::$app->get('cache')){
+            throw new InvalidConfigException("Unknown component ID: cache");
+        }
+
+        if (($pluginsDir = ArrayHelper::getValue($app->modules, 'plugins.pluginRoot')) == null) {
+            throw new Exception("Unknown Plugins Module property: pluginRoot");
+        }
+
+        if (($pluginNamespace = ArrayHelper::getValue($app->modules, 'plugins.pluginNamespace')) == null) {
+            throw new Exception("Unknown Plugins Module property: pluginNamespace");
+        }
+    }
+
+    /**
+     * 插件绑定事件和钩子
+     * @param $app
+     * @return array|null
+     */
     public static function hooksBind($app)
     {
-        if(empty(self::$pluginsDir)){
-            throw new Exception('The plugin directory cannot be empty');
+        if (!isset($app->modules['plugins'])) {
+            return null;
         }
 
-        if (self::$hooks) {
-            return self::$hooks;
-        }
+        // 判断是否有插件信息
+        if (Common::getCache(null, 'plugins')) return [];
 
-        foreach (self::$pluginsDir as $key => $value) {
-            $files = FileHelper::findFiles(\Yii::getAlias($key), ['only' => [$value]]);
-            foreach ($files as $file) {
-                $params = Common::parse($file);
-//                Fun::setCache($params['name'],$params,'addons');
-                if (!$params['state']) {
-                    continue;
-                }
-                $class = \Yii::$app->getModule($params['name']);
+        $files = FileHelper::findFiles(\Yii::getAlias($pluginsDir), ['only' => ['/*/info.ini']]);
+        if (empty($files)) return [];
+
+        foreach ($files as $file) {
+            $params = Common::parse($file);
+            Common::setCache($params['name'], $params, 'plugins');
+            if (!$params['state']) {
+                continue;
+            }
+
+            $classNamespace = $pluginNamespace . '\\' . $params['name'] . '\\' . Common::parseName($params['name'], 1);
+            if (class_exists($classNamespace)) {
+                $class = new $classNamespace();
                 if ($class instanceof Plugin) {
-                    // 注册插件模块
-//                    \Yii::$app->setModule($params['name'],$class::className());
-                    self::$hooks[] = !$class->tags ? self::$hooks : ArrayHelper::merge(self::$hooks, $class->tags);
+
+                    // 绑定钩子
+                    if ($class->hooks()) {
+                        foreach ($class->hooks() as $name => $value) {
+                            self::$_hooks[$name] = [$classNamespace, $value];
+                        }
+                    }
+
+                    // 绑定钩子
+                    if ($class->events()) {
+                        foreach ($class->events() as $className => $events) {
+                            foreach ($events as $eventName => $event) {
+                                foreach ($event as $value) {
+                                    $value = is_array($value) ? $value : [$value];
+                                    if (count($value) > 1) {
+                                        $data = isset($value[1]) ? $value[1] : null;
+                                        $append = isset($value[2]) ? $value[2] : true;
+                                        self::$_events[$className][$eventName][] = [[$classNamespace, $value[0]], $data, $append];
+                                    } else {
+                                        self::$_events[$className][$eventName][] = [$classNamespace, $value[0]];
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
-
-        Hook::import(self::$hooks);
     }
 }
