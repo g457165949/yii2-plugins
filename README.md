@@ -82,7 +82,7 @@ Event::on('admin_login_init');
 
 ```
 
-## 例子
+## 插件目录说明
 拷贝example下menu到你创建的pluginRoot目录文件夹下
 
 - [assets](#assets) (js,css,img)资源拷贝项目web目录下
