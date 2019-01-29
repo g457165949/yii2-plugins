@@ -94,14 +94,14 @@ Event::on('admin_login_init');
 - [Menu.php](#插件.php) 插件主类
 
 
-##assets 
+## assets 
 ```sh
 js/
 img
 css
 ```
 
-##controllers
+## controllers
 ```php
 <?php
 class MenuController extends PluginBaseController
@@ -115,7 +115,7 @@ class MenuController extends PluginBaseController
 ```
 **注意**: 如果插件名和控制器名一致路由为menu/action名,否则menu/controller名/action名
 
-##messages
+## messages
 ```php
 <?php
 return [
@@ -125,7 +125,7 @@ return [
 ````
 **注意**: 如果插件名和控制器名一致翻译文件名为插件名,(插件名/controller名)controller名
 
-##info.ini
+## info.ini
 ```php
 name = menu
 title = 菜单插件
@@ -137,7 +137,7 @@ state = 1
 ```
 
 
-##插件.php
+## 插件.php
 ```php
 use zyh\plugins\components\Plugin;
 
