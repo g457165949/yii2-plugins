@@ -15,6 +15,16 @@ use yii\web\Response;
 use zyh\plugins\components\Common;
 use zyh\plugins\components\PluginManager;
 
+/**
+ * 如需替换此控制,只需修改
+ *      modules => [
+ *          plugins => [
+ *              controllerNamespace => '你自定义的控制namespace'
+ *           ]
+ *      ]
+ * Class PluginsController
+ * @package zyh\plugins\controllers
+ */
 class PluginsController extends Controller
 {
 
@@ -54,8 +64,7 @@ class PluginsController extends Controller
     public function actionInstall()
     {
         \Yii::$app->response->format = Response::FORMAT_JSON;
-//        $post = \Yii::$app->request->post();
-        $post = \Yii::$app->request->get();
+        $post = \Yii::$app->request->post();
         if (empty($post['name'])) {
             return Common::error(Common::t('Parameter %s can not be empty', 'name'));
         }
