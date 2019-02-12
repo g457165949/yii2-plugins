@@ -12,8 +12,6 @@ Plugins
     * 支持插件自定义布局
     * 支持插件自定义安装sql
 
-    
-
 安装
 ------------ 
 
@@ -48,7 +46,7 @@ Once the extension is installed, simply use it in your code by :
             'layoutPath' => '@app/views/layouts', #布局
             'pluginRoot' => '@app/plugins', ##放置插件的namespace目录
             'pluginNamespace' => 'app\plugins',  ##放置插件的namespace
-            'pluginDownloadUrl' => 'http://30071.dev.91gaoding.com'
+            'pluginDownloadUrl' => '下载地址(返回资源下载链接地址)'
         ],
         ...
     ]
@@ -73,12 +71,12 @@ $this->trigger('admin_login_init');
 or
  
 // Yii全局事件
-\Yii::on('admin_login_init')
+\Yii::trigger('admin_login_init')
  
 or 
 
 // Yii事件
-Event::on('admin_login_init');
+Event::trigger('admin_login_init');
 
 ```
 
@@ -108,7 +106,8 @@ class MenuController extends PluginBaseController
 {
 
     public function actionIndex(){
-        echo Fun::T('test1');die;
+        // 输出:测试
+        echo \Yii::t('menu','test');
         return $this->render('menu/index');
     }
 }
@@ -167,19 +166,26 @@ class Menu extends Plugin
         ];
     }
 
+    /**
+     * $params 参数
+     * $extra  其他参数
+     */
     public function loginInit($params, $extra)
     {
-//        echo 111111;
+        echo "登录初始化";
     }
 
+    /**
+     * $event 事件
+     */
     public function loginInit2($event)
     {
-//        echo 111111;
+        echo "登录初始化";
     }
 
     public function loginInit3($event)
     {
-//        echo 33333;
+        echo "登录初始化";
     }
 
 
