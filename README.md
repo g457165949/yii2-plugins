@@ -84,12 +84,12 @@ Event::trigger('admin_login_init');
 拷贝example下menu到你创建的pluginRoot目录文件夹下
 
 - [assets](#assets) (js,css,img)资源拷贝项目web目录下
-- [controllers](#controllers) 插件控制
+- [controllers](#controllers) 插件控制(必须有)
 - [messages](#messages) 自定义语义
-- views 插件模板和Yii模板文件加载方式一致
-- [info.ini](#info.ini) 插件配置
+- views 插件模板和Yii模板文件使用方式一致(可自定义主题)
+- [info.ini](#info.ini) 插件配置(必需有)
 - install.sql 插件安装后导入的sql语句
-- [Menu.php](#插件.php) 插件主类
+- [Menu.php](#插件.php) 插件主类(必需有)
 
 
 ## assets 
@@ -112,7 +112,7 @@ class MenuController extends PluginBaseController
     }
 }
 ```
-**注意**: 如果插件名和控制器名一致路由为menu/action名,否则menu/controller名/action名
+**注意**: 如果插件名和控制器名一致路由为(menu/action)和(menu/controller/action)
 
 ## messages
 ```php
@@ -122,7 +122,7 @@ return [
 ];
 
 ````
-**注意**: 如果插件名和控制器名一致翻译文件名为插件名,(插件名/controller名)controller名
+**注意**: 如果插件名和控制器名一致翻译文件命名为插件名(例如:menu.php)和插件名/controller(例如:menu/test)
 
 ## info.ini
 ```php
