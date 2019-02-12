@@ -28,10 +28,16 @@ class HookBootstrap implements BootstrapInterface
      */
     public function bootstrap($app)
     {
+        if (!self::checkInit($app)) {
+            return $app;
+        }
 
         Hook::listen('plugins_init_begin');
 
-        self::hooksBind($app);
+        // 判断是否有插件信息
+        if (!Common::getCache(null, 'plugins')){
+            self::hooksBind($app);
+        }
 
         // 加载插件路由
         Common::initPluginsUrlRules();
@@ -65,18 +71,25 @@ class HookBootstrap implements BootstrapInterface
      * @throws Exception
      * @throws InvalidConfigException
      */
-    public static function checkInit($app){
-        if(!\Yii::$app->get('cache')){
+    public static function checkInit($app)
+    {
+        if ((Common::$_pluginConfig = ArrayHelper::getValue($app->modules, 'plugins')) == null) {
+            return false;
+        }
+
+        if (!\Yii::$app->get('cache', false)) {
             throw new InvalidConfigException("Unknown component ID: cache");
         }
 
-        if (($pluginsDir = ArrayHelper::getValue($app->modules, 'plugins.pluginRoot')) == null) {
+        if (!isset(Common::$_pluginConfig['pluginRoot'])) {
             throw new Exception("Unknown Plugins Module property: pluginRoot");
         }
 
-        if (($pluginNamespace = ArrayHelper::getValue($app->modules, 'plugins.pluginNamespace')) == null) {
+        if (!isset(Common::$_pluginConfig['pluginNamespace'])) {
             throw new Exception("Unknown Plugins Module property: pluginNamespace");
         }
+
+        return true;
     }
 
     /**
@@ -86,14 +99,7 @@ class HookBootstrap implements BootstrapInterface
      */
     public static function hooksBind($app)
     {
-        if (!isset($app->modules['plugins'])) {
-            return null;
-        }
-
-        // 判断是否有插件信息
-        if (Common::getCache(null, 'plugins')) return [];
-
-        $files = FileHelper::findFiles(\Yii::getAlias($pluginsDir), ['only' => ['/*/info.ini']]);
+        $files = FileHelper::findFiles(\Yii::getAlias(Common::$_pluginConfig['pluginRoot']), ['only' => ['/*/info.ini']]);
         if (empty($files)) return [];
 
         foreach ($files as $file) {
@@ -103,7 +109,7 @@ class HookBootstrap implements BootstrapInterface
                 continue;
             }
 
-            $classNamespace = $pluginNamespace . '\\' . $params['name'] . '\\' . Common::parseName($params['name'], 1);
+            $classNamespace = Common::$_pluginConfig['pluginNamespace'] . '\\' . $params['name'] . '\\' . Common::parseName($params['name'], 1);
             if (class_exists($classNamespace)) {
                 $class = new $classNamespace();
                 if ($class instanceof Plugin) {
@@ -115,7 +121,7 @@ class HookBootstrap implements BootstrapInterface
                         }
                     }
 
-                    // 绑定钩子
+                    // 绑定事件
                     if ($class->events()) {
                         foreach ($class->events() as $className => $events) {
                             foreach ($events as $eventName => $event) {
