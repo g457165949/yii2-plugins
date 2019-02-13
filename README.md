@@ -89,7 +89,8 @@ Event::trigger('admin_login_init');
 - views 插件模板和Yii模板文件使用方式一致(可自定义主题)
 - [info.ini](#info.ini) 插件配置(必需有)
 - install.sql 插件安装后导入的sql语句
-- [Menu.php](#插件.php) 插件主类(必需有)
+- [Menu.php](#插件类) 插件主类(必需有)
+- [MenuAsset.php](#资源类) 如有js,img,css存放地址
 
 
 ## assets 
@@ -106,7 +107,7 @@ class MenuController extends PluginBaseController
 {
 
     public function actionIndex(){
-        // 输出:测试
+        // 插件国际化语义调用方式 输出:测试
         echo \Yii::t('menu','test');
         return $this->render('menu/index');
     }
@@ -136,7 +137,7 @@ state = 1
 ```
 
 
-## 插件.php
+## 插件类
 ```php
 use zyh\plugins\components\Plugin;
 
@@ -201,4 +202,20 @@ class Menu extends Plugin
         return true;
     }
 }
+```
+
+## 资源类
+```php
+use yii\web\AssetBundle;
+
+class MenuAsset extends AssetBundle
+{
+    //资源文件的源文件位置
+    public $sourcePath = '@app/plugins/menu/assets';
+}
+```
+
+```php
+// 页面资源调用方式
+$configJs = MenuAsset::register($this)->baseUrl.'/js/config.js';
 ```

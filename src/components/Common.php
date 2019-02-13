@@ -15,6 +15,12 @@ use yii\helpers\FileHelper;
 class Common
 {
     /**
+     * 插件module配置信息
+     * @var array
+     */
+    public static $_pluginConfig = [];
+
+    /**
      * 插件语义翻译
      * @param $msg
      * @param $params
@@ -26,11 +32,23 @@ class Common
         return \Yii::t($category, $msg, $params);
     }
 
+    /**
+     * AJAX 返回错误信息
+     * @param $msg
+     * @param int $code
+     * @return array
+     */
     public static function error($msg, $code = -1)
     {
         return ['msg' => $msg, 'code' => $code];
     }
 
+    /**
+     * AJAX 返回错误信息
+     * @param $data
+     * @param int $code
+     * @return array
+     */
     public static function success($data, $code = 0)
     {
         return ['data' => $data, 'code' => $code];
@@ -43,16 +61,8 @@ class Common
      */
     public static function pluginPath($pluginName = '')
     {
-        $path = \Yii::getAlias(\Yii::$app->modules['plugins']->pluginRoot);
+        $path = \Yii::getAlias(self::$_pluginConfig['pluginRoot']);
         return $pluginName ? $path . DIRECTORY_SEPARATOR . $pluginName : $path;
-    }
-
-    /*
-     * 获取插件配置的信息
-     */
-    public static function config($name)
-    {
-        return \Yii::$app->params['plugins.config'][$name];
     }
 
     /**
@@ -172,12 +182,13 @@ class Common
         } else {
             $class = self::parseName(is_null($class) ? $name : $class, 1);
         }
+
         switch ($type) {
             case 'controller':
-                $namespace = "app\\plugins\\" . $name . "\\controller\\" . $class;
+                $namespace = self::$_pluginConfig['pluginNamespace'] . $name . "\\controller\\" . $class;
                 break;
             default:
-                $namespace = "app\\plugins\\" . $name . "\\" . $class;
+                $namespace = self::$_pluginConfig['pluginNamespace'] . $name . "\\" . $class;
         }
         return class_exists($namespace) ? $namespace : '';
     }
