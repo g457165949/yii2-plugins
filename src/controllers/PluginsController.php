@@ -15,16 +15,6 @@ use yii\web\Response;
 use zyh\plugins\components\Common;
 use zyh\plugins\components\PluginManager;
 
-/**
- * 如需替换此控制,只需修改
- *      modules => [
- *          plugins => [
- *              controllerNamespace => '你自定义的控制namespace'
- *           ]
- *      ]
- * Class PluginsController
- * @package zyh\plugins\controllers
- */
 class PluginsController extends Controller
 {
 
@@ -39,7 +29,7 @@ class PluginsController extends Controller
 
         \Yii::$app->view->params['config'] = $config;
         return $this->render('/plugins/index', [
-            'config' => \Yii::$app->params
+            'config' => $config
         ]);
     }
 
@@ -70,7 +60,7 @@ class PluginsController extends Controller
         }
 
         try{
-            PluginManager::install($post['name'], false, $post);
+            (new PluginManager())->install($post['name'], false, $post);
             $info = Common::getPluginInfo($post['name']);
             $info['config'] = Common::getPluginConfig($post['name']) ? 1 : 0;
             $info['state'] = 1;
@@ -92,7 +82,7 @@ class PluginsController extends Controller
             return Common::error(Common::t('Parameter %s can not be empty', 'name'));
         }
         try {
-            PluginManager::uninstall($name, $force);
+            (new PluginManager())->uninstall($name, $force);
         } catch (Exception $e) {
             return Common::error($e->getMessage());
         }
@@ -100,13 +90,50 @@ class PluginsController extends Controller
     }
 
     /**
+     * 更新插件
+     */
+    public function upgrade()
+    {
+        $name = \Yii::$app->request->post("name");
+        if (!$name) {
+            return Common::error(Common::t('Parameter %s can not be empty', 'name'));
+        }
+        try {
+            $uid = $this->request->post("uid");
+            $token = $this->request->post("token");
+            $version = $this->request->post("version");
+            $faversion = $this->request->post("faversion");
+            $extend = [
+                'uid'       => $uid,
+                'token'     => $token,
+                'version'   => $version,
+                'faversion' => $faversion
+            ];
+            //调用更新的方法
+            (new PluginManager())->upgrade($name, $extend);
+            Common::success(Common::t('Operate successful'));
+        } catch (\Exception $e) {
+            return Common::error($e->getMessage());
+        }
+    }
+
+    /**
      * 启用
      */
     public function actionEnable()
     {
-        // 修改info.ini文件信息
-
-        // 修改插件缓存中的信息
+        \Yii::$app->response->format = Response::FORMAT_JSON;
+        $name = \Yii::$app->request->post("name");
+        $extend = \Yii::$app->request->post("extend");
+        if (!$name) {
+            return Common::error(Common::t('Parameter %s can not be empty', 'name'));
+        }
+        try {
+            (new PluginManager())->enable($name, $extend);
+        } catch (Exception $e) {
+            return Common::error($e->getMessage());
+        }
+        return Common::success(Common::t('Enable successful'));
     }
 
     /**
@@ -114,8 +141,17 @@ class PluginsController extends Controller
      */
     public function actionDisable()
     {
-        // 修改info.ini文件信息
-
-        // 修改插件缓存中的信息
+        \Yii::$app->response->format = Response::FORMAT_JSON;
+        $name = \Yii::$app->request->post("name");
+        $extend = \Yii::$app->request->post("extend");
+        if (!$name) {
+            return Common::error(Common::t('Parameter %s can not be empty', 'name'));
+        }
+        try {
+            (new PluginManager())->disable($name, $extend);
+        } catch (Exception $e) {
+            return Common::error($e->getMessage());
+        }
+        return Common::success(Common::t('Disable successful'));
     }
 }

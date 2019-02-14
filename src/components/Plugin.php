@@ -120,6 +120,24 @@ abstract class Plugin extends BaseObject
     }
 
     /**
+     * 获取完整配置列表
+     * @param string $name
+     * @return array
+     */
+    final public function getFullConfig($name = '')
+    {
+        $fullConfigArr = [];
+        if (empty($name)) {
+            $name = $this->getName();
+        }
+        $configFile = $this->pluginPath . 'config.php';
+        if (is_file($configFile)) {
+            $fullConfigArr = include $configFile;
+        }
+        return $fullConfigArr;
+    }
+
+    /**
      * 读取基础配置信息
      * @param string $name
      * @return array

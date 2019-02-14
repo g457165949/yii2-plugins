@@ -85,7 +85,7 @@ class Common
      * @param string $category
      * @return bool
      */
-    public static function setCache($key, $value, $category)
+    public static function setCache($key, $value, $category, $duration = null)
     {
         $config = self::getCache('', $category);
         if ($key) {
@@ -93,7 +93,7 @@ class Common
         } else {
             $config = $value;
         }
-        return \Yii::$app->cache->set($category, $config);
+        return \Yii::$app->cache->set($category, $config, $duration);
     }
 
     /**
@@ -115,11 +115,12 @@ class Common
     /**
      * 清除插件所有缓存
      */
-    public static function delAllCache(){
+    public static function delAllCache()
+    {
         // 插件配置缓存
-        Common::delCache('','plugins');
+        Common::delCache('', 'plugins');
         // 插件路由配置缓存
-        Common::delCache('','pluginsUrlRules');
+        Common::delCache('', 'pluginsUrlRules');
     }
 
     /**
@@ -165,7 +166,7 @@ class Common
 
     /**
      * 获取插件类的类名
-     * @param $name 插件名
+     * @param string $name 插件名
      * @param string $type 返回命名空间类型
      * @param string $class 当前类名
      * @return string
@@ -222,11 +223,98 @@ class Common
     }
 
     /**
+     * 写入配置文件
+     * @param string $name 插件名
+     * @param array $config 配置数据
+     * @param boolean $writeFile 是否写入配置文件
+     */
+    public static function setPluginConfig($name, $config, $writeFile = true)
+    {
+        $plugin = self::getPluginInstance($name);
+        $plugin->setConfig($name, $config);
+        $fullConfig = self::getPluginFullConfig($name);
+        foreach ($fullConfig as $k => &$v) {
+            if (isset($config[$v['name']])) {
+                $value = $v['type'] !== 'array' && is_array($config[$v['name']]) ? implode(',', $config[$v['name']]) : $config[$v['name']];
+                $v['value'] = $value;
+            }
+        }
+        if ($writeFile) {
+            // 写入配置文件
+            self::setPluginFullConfig($name, $fullConfig);
+        }
+        return true;
+    }
+
+    /**
+     * 获取插件类的配置数组
+     * @param string $name 插件名
+     * @return array
+     */
+    public static function getPluginFullConfig($name)
+    {
+        $plugin = self::getPluginInstance($name);
+        if (!$plugin) {
+            return [];
+        }
+        return $plugin->getFullConfig($name);
+    }
+
+    /**
+     * 写入配置文件
+     * @param string $name 插件名
+     * @param array $array
+     * @return boolean
+     * @throws \Exception
+     */
+    public static function setPluginFullConfig($name, $array)
+    {
+        $file = self::pluginPath($name) . DIRECTORY_SEPARATOR . 'config.php';
+        if (!self::checkReallyWritable($file)) {
+            throw new \Exception("文件没有写入权限");
+        }
+        if ($handle = fopen($file, 'w')) {
+            fwrite($handle, "<?php\n\n" . "return " . var_export($array, TRUE) . ";\n");
+            fclose($handle);
+        } else {
+            throw new \Exception("文件没有写入权限");
+        }
+        return true;
+    }
+
+    /**
+     * 检测文件或文件夹是否可写
+     * @param $file
+     * @return bool
+     */
+    public static function checkReallyWritable($file)
+    {
+        if (DIRECTORY_SEPARATOR === '/') {
+            return is_writable($file);
+        }
+        if (is_dir($file)) {
+            $file = rtrim($file, '/') . '/' . md5(mt_rand());
+            if (($fp = @fopen($file, 'ab')) === FALSE) {
+                return FALSE;
+            }
+            fclose($fp);
+            @chmod($file, 0777);
+            @unlink($file);
+            return TRUE;
+        } elseif (!is_file($file) OR ($fp = @fopen($file, 'ab')) === FALSE) {
+            return FALSE;
+        }
+        fclose($fp);
+        return TRUE;
+    }
+
+
+    /**
      * 设置基础配置信息
      * @param string $name 插件名
      * @param array $array
      * @return boolean
-     * @throws Exception
+     * @throws \Exception
      */
     public static function setPluginInfo($name, $array)
     {
@@ -246,7 +334,7 @@ class Common
             fwrite($handle, implode("\n", $res) . "\n");
             fclose($handle);
             //清空当前配置缓存
-            self::setCache($name, NULL, 'pluginInfo');
+            self::delCache($name, 'plugins');
         } else {
             throw new \Exception("文件没有写入权限");
         }
@@ -299,7 +387,7 @@ class Common
     {
         $plugins = self::getCache('', 'plugins', []);
         foreach ($plugins as $key => $plugin) {
-            if(empty($plugin)){
+            if (empty($plugin)) {
                 continue;
             }
             if (!isset(\Yii::$app->i18n->translations[$key . '*'])) {

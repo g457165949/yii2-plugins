@@ -11,32 +11,26 @@ namespace zyh\plugins\components;
 
 use yii\base\Exception;
 use yii\helpers\FileHelper;
+use zacksleo\yii2\plugin\components\PluginManger;
 use zyh\plugins\services\Service;
 
-class PluginManager
+class PluginManager extends PluginManagerBase
 {
 
-    public static function install($name, $force = false, $extend)
+    public function install($name, $force = false, $extend)
     {
         if (!$name || (is_dir(Common::pluginPath($name)) && !$force)) {
             throw new \Exception('Plugin already exists');
         }
 
         // 下载
-        $tmpFile = Service::download($name, $extend);
+        $tmpFile = $this->download($name, $extend);
         // 解压
-        $plauginsDir = Service::unzip($name);
+        $plauginsDir = $this->unzip($name);
         // 移除临时文件
         @unlink($tmpFile);
         // 检查插件是否完整
-        Service::check($name);
-
-        // 复制文件
-        $sourceAssetsDir = $plauginsDir . DIRECTORY_SEPARATOR . 'assets';
-        $destAssetsDir = self::getDestAssetsDir($name);
-        if (is_dir($sourceAssetsDir)) {
-            FileHelper::copyDirectory($sourceAssetsDir, $destAssetsDir);
-        }
+        $this->check($name);
 
         try {
             // 默认启用该插件
@@ -57,22 +51,23 @@ class PluginManager
         }
 
         // 导入sql
-        Service::importSql($name);
+        $this->importSql($name);
 
         return true;
     }
 
-    public static function uninstall($name, $force)
+    /**
+     * 卸载
+     * @param string $name 插件名
+     * @param bool $force 是否强制执行
+     * @return bool
+     * @throws Exception
+     */
+    public function uninstall($name, $force = false)
     {
         if (!$name || !is_dir(Common::pluginPath($name))) {
             throw new Exception('Plugin not exists');
         }
-
-        // 移除插件基础资源目录
-//        $destAssetsDir = self::getDestAssetsDir($name);
-//        if (is_dir($destAssetsDir)) {
-//            rmdirs($destAssetsDir);
-//        }
 
         // 执行卸载脚本
         try {
@@ -91,23 +86,71 @@ class PluginManager
     }
 
     /**
+     * 升级插件
+     *
+     * @param   string $name 插件名称
+     * @param   array $extend 扩展参数
+     */
+    public function upgrade($name, $extend = [])
+    {
+        $info = Common::getPluginInfo($name);
+        if ($info['state']) {
+            throw new \Exception('Please disable plugin first');
+        }
+
+        $config = Common::getPluginConfig($name);
+        if ($config) {
+            //备份配置
+        }
+
+        // 备份插件文件
+        $this->backup($name);
+
+        // 远程下载插件
+        $tmpFile = $this->download($name, $extend);
+
+        // 解压插件
+        $addonDir = $this->unzip($name);
+
+        // 移除临时文件
+        @unlink($tmpFile);
+
+        if ($config) {
+            // 还原配置
+            Common::setPluginConfig($name, $config);
+        }
+
+        // 导入
+        $this->importSql($name);
+
+        // 执行升级脚本
+        try {
+            $class = Common::getPluginClass($name);
+            if (class_exists($class)) {
+                $plugin = new $class();
+
+                if (method_exists($class, "upgrade")) {
+                    $plugin->upgrade();
+                }
+            }
+        } catch (Exception $e) {
+            throw new Exception($e->getMessage());
+        }
+        return true;
+    }
+
+    /**
      * 启用插件
      * @param $name
      * @param array $extend
      * @return bool
      * @throws Exception
      */
-    public static function enable($name, $extend = [])
+    public function enable($name, $extend = [])
     {
         if (!$name || !is_dir(Common::pluginPath($name))) {
             throw new Exception('Plugin not exists');
         }
-
-        // 移除插件基础资源目录
-//        $destAssetsDir = self::getDestAssetsDir($name);
-//        if (is_dir($destAssetsDir)) {
-//            rmdirs($destAssetsDir);
-//        }
 
         // 执行脚本
         try {
@@ -135,17 +178,11 @@ class PluginManager
      * @return bool
      * @throws Exception
      */
-    public static function disable($name, $extend = [])
+    public function disable($name, $extend = [])
     {
         if (!$name || !is_dir(Common::pluginPath($name))) {
             throw new Exception('Plugin not exists');
         }
-
-        // 移除插件基础资源目录
-//        $destAssetsDir = self::getDestAssetsDir($name);
-//        if (is_dir($destAssetsDir)) {
-//            rmdirs($destAssetsDir);
-//        }
 
         // 删除配置
         $info = Common::getPluginInfo($name);
@@ -166,30 +203,5 @@ class PluginManager
         }
 
         return true;
-    }
-
-    /**
-     * 获取插件源资源文件夹
-     * @param   string $name 插件名称
-     * @return  string
-     */
-    protected static function getSourceAssetsDir($name)
-    {
-        return Common::pluginPath($name) . DIRECTORY_SEPARATOR . 'assets';
-    }
-
-    /**
-     * 获取插件目标资源文件夹
-     * @param   string $name 插件名称
-     * @return  string
-     */
-    protected static function getDestAssetsDir($name)
-    {
-        return \Yii::getAlias('@webroot');
-//        $assetsDir = \Yii::getAlias('@app/web') . "/static/{$name}/";
-//        if (!is_dir($assetsDir)) {
-//            FileHelper::createDirectory($assetsDir);
-//        }
-//        return $assetsDir;
     }
 }

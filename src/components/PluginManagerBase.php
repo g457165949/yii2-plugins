@@ -1,6 +1,8 @@
 <?php
-namespace zyh\plugins\services;
+namespace zyh\plugins\components;
 
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
 use ZipArchive;
 use zyh\plugins\components\Common;
 use zyh\plugins\components\Http;
@@ -11,7 +13,7 @@ use zyh\plugins\components\Http;
  * Date: 2019/1/24
  * Time: 上午11:13
  */
-class Service
+class PluginManagerBase
 {
     /**
      * 远程下载插件
@@ -21,9 +23,9 @@ class Service
      * @return  string
      * @throws  \Exception
      */
-    public static function download($name, $extend = [])
+    protected function download($name, $extend = [])
     {
-        $pluginsTmpDir = \Yii::getAlias('@runtime') . '/plugins' . DIRECTORY_SEPARATOR;
+        $pluginsTmpDir = self::getTempDownloadDir();
         if (!is_dir($pluginsTmpDir)) {
             @mkdir($pluginsTmpDir, 0755, true);
         }
@@ -37,7 +39,7 @@ class Service
             ]
         ];
 
-        $ret = Http::sendRequest(self::getServerUrl() . '/plugins/download', array_merge(['name' => $name], $extend), 'GET', $options);
+        $ret = Http::sendRequest(self::getServerUrl(), array_merge(['name' => $name], $extend), 'GET', $options);
         if ($ret['ret']) {
             if (substr($ret['msg'], 0, 1) == '{') {
                 $json = (array)json_decode($ret['msg'], true);
@@ -79,10 +81,10 @@ class Service
      * @return  string
      * @throws  \Exception
      */
-    public static function unzip($name)
+    protected function unzip($name)
     {
-        $file = \Yii::getAlias('@runtime') . DIRECTORY_SEPARATOR . 'plugins' . DIRECTORY_SEPARATOR . $name . '.zip';
-        $dir = Common::pluginPath()  . DIRECTORY_SEPARATOR;
+        $file = self::getTempDownloadDir() . $name . '.zip';
+        $dir = Common::pluginPath() . DIRECTORY_SEPARATOR;
 
         if (class_exists('ZipArchive')) {
             $zip = new ZipArchive;
@@ -100,13 +102,44 @@ class Service
     }
 
     /**
+     * 备份插件
+     * @param string $name 插件名称
+     * @return bool
+     * @throws \Exception
+     */
+    protected function backup($name)
+    {
+        $file = self::getTempDownloadDir() . $name . '-backup-' . date("YmdHis") . '.zip';
+        $dir = Common::pluginPath($name) . DIRECTORY_SEPARATOR;
+        if (class_exists('ZipArchive')) {
+            $zip = new ZipArchive;
+            $zip->open($file, ZipArchive::CREATE);
+            $files = new RecursiveIteratorIterator(
+                new RecursiveDirectoryIterator($dir, RecursiveDirectoryIterator::SKIP_DOTS), RecursiveIteratorIterator::CHILD_FIRST
+            );
+            foreach ($files as $fileInfo) {
+                $filePath = $fileInfo->getPathName();
+                $localName = str_replace($dir, '', $filePath);
+                if ($fileInfo->isFile()) {
+                    $zip->addFile($filePath, $localName);
+                } elseif ($fileInfo->isDir()) {
+                    $zip->addEmptyDir($localName);
+                }
+            }
+            $zip->close();
+            return true;
+        }
+        throw new \Exception("无法执行压缩操作，请确保ZipArchive安装正确");
+    }
+
+    /**
      * 检测插件是否完整
      *
      * @param   string $name 插件名称
      * @return  boolean
      * @throws  \Exception
      */
-    public static function check($name)
+    protected function check($name)
     {
         if (!$name || !is_dir(Common::pluginPath($name))) {
             throw new \Exception('Plugin not exists');
@@ -129,26 +162,26 @@ class Service
      * @param   string $name 插件名称
      * @return  boolean
      */
-    public static function importSql($name)
+    protected function importSql($name)
     {
         $sqlFile = Common::pluginPath($name) . DIRECTORY_SEPARATOR . 'install.sql';
         if (is_file($sqlFile)) {
             $lines = file($sqlFile);
-            $templine = '';
+            $tempLine = '';
             foreach ($lines as $line) {
                 if (substr($line, 0, 2) == '--' || $line == '' || substr($line, 0, 2) == '/*')
                     continue;
 
-                $templine .= $line;
+                $tempLine .= $line;
                 if (substr(trim($line), -1, 1) == ';') {
-                    $templine = str_ireplace('__PREFIX__', \Yii::$app->get('db')->tablePrefix.'_', $templine);
-                    $templine = str_ireplace('INSERT INTO ', 'INSERT IGNORE INTO ', $templine);
+                    $tempLine = str_ireplace('__PREFIX__', \Yii::$app->get('db')->tablePrefix . '_', $tempLine);
+                    $tempLine = str_ireplace('INSERT INTO ', 'INSERT IGNORE INTO ', $tempLine);
                     try {
-                        \Yii::$app->get('db')->createCommand($templine)->execute();
+                        \Yii::$app->get('db')->createCommand($tempLine)->execute();
                     } catch (\PDOException $e) {
                         //$e->getMessage();
                     }
-                    $templine = '';
+                    $tempLine = '';
                 }
             }
         }
@@ -162,6 +195,15 @@ class Service
      */
     protected static function getServerUrl()
     {
-        return \Yii::$app->getModule('plugins')->pluginDownloadUrl;
+        return Common::$_pluginConfig['params']['downloadUrl'];
+    }
+
+    /**
+     * 临时下载目录
+     * @return string
+     */
+    protected static function getTempDownloadDir()
+    {
+        return \Yii::getAlias('@runtime/plugins') . DIRECTORY_SEPARATOR;
     }
 }

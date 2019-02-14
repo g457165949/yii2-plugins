@@ -54,6 +54,21 @@ class Module extends \yii\base\Module
             $this->controllerNamespace = $this->pluginNamespace . '\\' . strtolower($array[1]);
             $this->setPluginViewPath();
         }
+        \Yii::setAlias('@module',dirname(__FILE__));
+        $this->registerTranslations();
+    }
+
+    public function registerTranslations()
+    {
+        if (!isset(\Yii::$app->i18n->translations[$this->id . '*'])) {
+            \Yii::$app->i18n->translations[$this->id . '*'] = [
+                'class' => 'yii\i18n\PhpMessageSource',
+                'basePath' => '@module/messages',
+                'fileMap' => [
+                    'plugins/plugins' => 'plugins.php'
+                ],
+            ];
+        }
     }
 
     /**
