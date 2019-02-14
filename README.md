@@ -42,11 +42,31 @@ Once the extension is installed, simply use it in your code by :
     'modules'=>[
         'plugins' => [
             'class' => 'zyh\plugins\Module',
-            'layout' => 'main',
-            'layoutPath' => '@app/views/layouts', #布局
+            /**
+            //自定义插件管理后台控制controller
+            'controllerMap' => [
+                'plugins' => [
+                    // 指向自己的控制器
+                    'class' => 'app\controllers\PluginsController',
+                ]
+            ],
+            'params' => [
+                // 插件广场接口
+                'apiUrl' => 'http://30071.dev.91gaoding.com/api/plugins',
+                // 插件下载接口(返回插件下载地址)
+                'downloadUrl' => 'http://30071.dev.91gaoding.com/plugins/download'
+            ],
+            */
+            
+            /**
+             // 可自定义自己页面位置
+            'layout' => 'main', // 布局名称
+            'layoutPath' => '@app/views/layouts', // 布局位置
+            'viewPath' => '@app/views', // 页面位置
+            */
+            
             'pluginRoot' => '@app/plugins', ##放置插件的namespace目录
             'pluginNamespace' => 'app\plugins',  ##放置插件的namespace
-            'pluginDownloadUrl' => '下载地址(返回资源下载链接地址)'
         ],
         ...
     ]
