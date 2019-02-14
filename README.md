@@ -42,7 +42,7 @@ Once the extension is installed, simply use it in your code by :
     'modules'=>[
         'plugins' => [
             'class' => 'zyh\plugins\Module',
-            /**
+            /*
             //自定义插件管理后台控制controller
             'controllerMap' => [
                 'plugins' => [
@@ -58,7 +58,7 @@ Once the extension is installed, simply use it in your code by :
             ],
             */
             
-            /**
+            /*
              // 可自定义自己页面位置
             'layout' => 'main', // 布局名称
             'layoutPath' => '@app/views/layouts', // 布局位置
