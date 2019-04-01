@@ -82,6 +82,10 @@ class PluginManager extends PluginManagerBase
 
         // 移除插件目录
         FileHelper::removeDirectory(Common::pluginPath($name));
+
+        // 删除插件缓存
+//        Common::delCache($name,'plugins');
+        Common::delAllCache();
         return true;
     }
 

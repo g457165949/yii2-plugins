@@ -13,11 +13,11 @@ use yii\base\Exception;
 use yii\web\Controller;
 use yii\web\Response;
 use zyh\plugins\components\Common;
+use zyh\plugins\components\Http;
 use zyh\plugins\components\PluginManager;
 
 class PluginsController extends Controller
 {
-
     /**
      * 插件市场所有插件信息
      * @return string
@@ -25,7 +25,12 @@ class PluginsController extends Controller
     public function actionIndex()
     {
         $config = \Yii::$app->view->params['config'];
-        $config['plugins'] = Common::getCache(null, 'plugins');
+        $config['plugins'] = Common::getCache(null, 'plugins', []);
+//        echo '<pre>';var_dump($config);die;
+
+        foreach ($config['plugins'] as $k => &$v){
+            $v['config'] = Common::getPluginConfig($v['name']) ? 1 : 0;
+        }
 
         \Yii::$app->view->params['config'] = $config;
         return $this->render('/plugins/index', [
@@ -39,13 +44,66 @@ class PluginsController extends Controller
      */
     public function actionDownloaded()
     {
-        $config = \Yii::$app->view->params['config'];
-        $config['plugins'] = Common::getCache(null, null, 'plugins');
+        \Yii::$app->response->format = Response::FORMAT_JSON;
+        $offset = (int)\Yii::$app->request->get("offset");
+        $limit = (int)\Yii::$app->request->get("limit");
+        $filter = \Yii::$app->request->get("filter");
+        $search = \Yii::$app->request->get("search");
+        $search = htmlspecialchars(strip_tags($search));
 
-        \Yii::$app->view->params['config'] = $config;
-        return $this->render('/plugins/index', [
-            'config' => \Yii::$app->params
-        ]);
+        $onlinePlugins = Common::getCache(null, "onlinePlugins");
+        if (!is_array($onlinePlugins)) {
+            $onlinePlugins = [];
+            $result = Http::sendRequest(Common::$_pluginConfig['params']['downloadUrl']);
+            if ($result['ret']) {
+                $json = json_decode($result['msg'], TRUE);
+                $rows = isset($json['rows']) ? $json['rows'] : [];
+                foreach ($rows as $index => $row) {
+                    $onlinePlugins[$row['name']] = $row;
+                }
+            }
+            Common::setCache(null, "onlinePlugins", $onlinePlugins, 600);
+        }
+        $filter = (array)json_decode($filter, true);
+        $plugins = Common::getCache(null, 'plugins', []);
+        $list = [];
+        foreach ($plugins as $k => $v) {
+            if ($search && stripos($v['name'], $search) === FALSE && stripos($v['intro'], $search) === FALSE)
+                continue;
+
+            if (isset($onlinePlugins[$v['name']])) {
+                $v = array_merge($v, $onlinePlugins[$v['name']]);
+            } else {
+                $v['category_id'] = 0;
+                $v['flag'] = '';
+                $v['banner'] = '';
+                $v['image'] = '';
+                $v['donateimage'] = '';
+                $v['demourl'] = '';
+                $v['price'] = '0.00';
+                $v['screenshots'] = [];
+                $v['releaselist'] = [];
+            }
+            $v['createtime'] = filemtime(Common::pluginPath($v['name']));
+            if ($filter && isset($filter['category_id']) && is_numeric($filter['category_id']) && $filter['category_id'] != $v['category_id']) {
+                continue;
+            }
+            $list[] = $v;
+        }
+        $total = count($list);
+        if ($limit) {
+            $list = array_slice($list, $offset, $limit);
+        }
+        $result = array("total" => $total, "rows" => $list);
+
+        if (\Yii::$app->request->get('callback')) {
+            \Yii::$app->response->format = Response::FORMAT_JSONP;
+            return [
+                'data' => $result,
+                'callback' => \Yii::$app->request->get('callback')
+            ];
+        }
+        return $result;
     }
 
     /**
@@ -59,12 +117,12 @@ class PluginsController extends Controller
             return Common::error(Common::t('Parameter %s can not be empty', 'name'));
         }
 
-        try{
+        try {
             (new PluginManager())->install($post['name'], false, $post);
             $info = Common::getPluginInfo($post['name']);
             $info['config'] = Common::getPluginConfig($post['name']) ? 1 : 0;
             $info['state'] = 1;
-        }catch (Exception $e){
+        } catch (Exception $e) {
             return Common::error($e->getMessage());
         }
         return Common::success($info);
@@ -104,9 +162,9 @@ class PluginsController extends Controller
             $version = $this->request->post("version");
             $faversion = $this->request->post("faversion");
             $extend = [
-                'uid'       => $uid,
-                'token'     => $token,
-                'version'   => $version,
+                'uid' => $uid,
+                'token' => $token,
+                'version' => $version,
                 'faversion' => $faversion
             ];
             //调用更新的方法
@@ -117,29 +175,67 @@ class PluginsController extends Controller
         }
     }
 
-    /**
-     * 启用
-     */
-    public function actionEnable()
-    {
-        \Yii::$app->response->format = Response::FORMAT_JSON;
-        $name = \Yii::$app->request->post("name");
-        $extend = \Yii::$app->request->post("extend");
-        if (!$name) {
-            return Common::error(Common::t('Parameter %s can not be empty', 'name'));
-        }
-        try {
-            (new PluginManager())->enable($name, $extend);
-        } catch (Exception $e) {
-            return Common::error($e->getMessage());
-        }
-        return Common::success(Common::t('Enable successful'));
-    }
 
     /**
-     * 停用
+     * 配置
      */
-    public function actionDisable()
+    public function actionConfig($ids = NULL)
+    {
+        $this->layout = 'main-base';
+        $name = \Yii::$app->request->get("name");
+        if (!$name) {
+            return Common::error(Common::t('Parameter %s can not be empty', $ids ? 'id' : 'name'));
+        }
+        if (!is_dir(Common::pluginPath($name))) {
+            return Common::error(Common::t(('Directory not found')));
+        }
+        $info = Common::getPluginInfo($name);
+        $config = Common::getPluginFullConfig($name);
+        if (!$info)
+            Common::error(Common::t(('No Results were found')));
+        if (\Yii::$app->request->isPost) {
+            \Yii::$app->response->format = Response::FORMAT_JSON;
+            $params = \Yii::$app->request->post("row");
+            if ($params) {
+                foreach ($config as $k => &$v) {
+                    if (isset($params[$v['name']])) {
+                        if ($v['type'] == 'array') {
+                            $params[$v['name']] = is_array($params[$v['name']]) ? $params[$v['name']] : (array)json_decode($params[$v['name']], true);
+                            $value = $params[$v['name']];
+                        } else {
+                            $value = is_array($params[$v['name']]) ? implode(',', $params[$v['name']]) : $params[$v['name']];
+                        }
+                        $v['value'] = $value;
+                    }
+                }
+                try {
+                    //更新配置文件
+                    Common::setPluginFullConfig($name, $config);
+//                    Service::refresh();
+                    return Common::success();
+                } catch (\Exception $e) {
+                    return Common::error(Common::t(($e->getMessage())));
+                }
+            }
+            return Common::error(Common::t('Parameter %s can not be empty', ''));
+        }
+        $tips = [];
+        foreach ($config as $index => &$item) {
+            if ($item['name'] == '__tips__') {
+                $tips = $item;
+                unset($config[$index]);
+            }
+        }
+        return $this->render('config',[
+            'plugins' => ['info' => $info, 'config' => $config, 'tips' => $tips]
+        ]);
+    }
+
+
+    /**
+     * 启用/禁用
+     */
+    public function actionState()
     {
         \Yii::$app->response->format = Response::FORMAT_JSON;
         $name = \Yii::$app->request->post("name");
@@ -148,10 +244,15 @@ class PluginsController extends Controller
             return Common::error(Common::t('Parameter %s can not be empty', 'name'));
         }
         try {
-            (new PluginManager())->disable($name, $extend);
+            if (\Yii::$app->request->post("action") == 'enable') {
+                (new PluginManager())->enable($name, $extend);
+            } else {
+                (new PluginManager())->disable($name, $extend);
+            }
+
         } catch (Exception $e) {
             return Common::error($e->getMessage());
         }
-        return Common::success(Common::t('Disable successful'));
+        return Common::success(Common::t('Operate successful'));
     }
 }

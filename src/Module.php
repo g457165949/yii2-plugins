@@ -48,8 +48,8 @@ class Module extends \yii\base\Module
         $route = \Yii::$app->requestedRoute;
         $array = explode("/", trim($route, "/"));
 
-        // 插件路由
-        if ($array[0] != $array[1]) {
+        // 判断是否是已安装的插件路由
+        if ($array[0] != $array[1] && Common::getPluginClass($array[1])) {
             $this->pluginId = $array[1];
             $this->controllerNamespace = $this->pluginNamespace . '\\' . strtolower($array[1]);
             $this->setPluginViewPath();
@@ -67,6 +67,7 @@ class Module extends \yii\base\Module
                 'fileMap' => [
                     'plugins/plugins' => 'plugins.php'
                 ],
+                'on missingTranslation' => ['app\components\TranslationEventHandler', 'handleMissingTranslation']
             ];
         }
     }

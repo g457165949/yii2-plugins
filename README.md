@@ -72,6 +72,11 @@ Once the extension is installed, simply use it in your code by :
     ]
 ```
 
+使用方式
+-----
+先对Yii模块进行配置,再拷贝事例中的代码,直接运行
+
+
 Hook使用
 -----
 

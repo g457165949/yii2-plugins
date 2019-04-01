@@ -69,7 +69,7 @@ abstract class Plugin extends BaseObject
      * 启用
      * @return bool
      */
-    protected function enable()
+    public function enable()
     {
         return true;
     }
@@ -78,7 +78,7 @@ abstract class Plugin extends BaseObject
      * 禁用
      * @return bool
      */
-    protected function disable()
+    public function disable()
     {
         return true;
     }
@@ -87,7 +87,7 @@ abstract class Plugin extends BaseObject
      * 更新
      * @return bool
      */
-    protected function upgrade()
+    public function upgrade()
     {
         return true;
     }
@@ -102,7 +102,7 @@ abstract class Plugin extends BaseObject
         if (empty($name)) {
             $name = $this->getName();
         }
-        $config = Common::getCache($name, 'plugins');
+        $config = Common::getCache($name, 'pluginsConfig');
         if ($config) {
             return $config;
         }
@@ -114,8 +114,26 @@ abstract class Plugin extends BaseObject
             }
             unset($temp_arr);
         }
-        Common::setCache($name, $config, 'plugins');
 
+        Common::setCache($name, $config, 'pluginsConfig');
+
+        return $config;
+    }
+
+    /**
+     * 设置配置数据
+     * @param $name
+     * @param array $value
+     * @return array
+     */
+    final public function setConfig($name = '', $value = [])
+    {
+        if (empty($name)) {
+            $name = $this->getName();
+        }
+        $config = $this->getConfig($name);
+        $config = array_merge($config, $value);
+        Common::setCache($name, $config, 'pluginsConfig');
         return $config;
     }
 
@@ -130,7 +148,7 @@ abstract class Plugin extends BaseObject
         if (empty($name)) {
             $name = $this->getName();
         }
-        $configFile = $this->pluginPath . 'config.php';
+        $configFile = $this->pluginPath . DIRECTORY_SEPARATOR . 'config.php';
         if (is_file($configFile)) {
             $fullConfigArr = include $configFile;
         }

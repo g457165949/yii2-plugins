@@ -40,18 +40,43 @@ class Common
      */
     public static function error($msg, $code = -1)
     {
-        return ['msg' => $msg, 'code' => $code];
+        return [
+            'wait' => 3,
+            'msg' => $msg,
+            'code' => $code,
+            'url' => \Yii::$app->request->isAjax ? '' : 'javascript:history.back(-1);'
+        ];
     }
 
     /**
-     * AJAX 返回错误信息
+     * AJAX 返回成功信息
      * @param $data
      * @param int $code
      * @return array
      */
-    public static function success($data, $code = 0)
+    public static function success($msg = '', $url = null, $data = null)
     {
-        return ['data' => $data, 'code' => $code];
+        if (is_null($url) && !is_null(\Yii::$app->request->headers->get('Referer'))) {
+            $url = \Yii::$app->request->headers->get('Referer');
+        }
+        return [
+            'wait' => 3,
+            'msg' => $msg,
+            'data' => $data,
+            'code' => 1,
+            'url' => $url,
+        ];
+    }
+
+    /**
+     * AJAX 返回数据
+     * @param $data
+     * @param int $code
+     * @return array
+     */
+    public static function result($data, $code = 0, $msg = '')
+    {
+        return ['msg' => $msg, 'data' => $data, 'code' => $code];
     }
 
     /**
@@ -75,7 +100,7 @@ class Common
     public static function getCache($key = null, $category, $default = null)
     {
         $config = \Yii::$app->cache->get($category);
-        return $config ? ($key ? ArrayHelper::getValue($category, $key, $default) : $config) : $default;
+        return $config ? ($key ? ArrayHelper::getValue($config, $key, $default) : $config) : $default;
     }
 
     /**
@@ -186,10 +211,10 @@ class Common
 
         switch ($type) {
             case 'controller':
-                $namespace = self::$_pluginConfig['pluginNamespace'] . $name . "\\controller\\" . $class;
+                $namespace = self::$_pluginConfig['pluginNamespace'] . "\\" . $name . "\\controller\\" . $class;
                 break;
             default:
-                $namespace = self::$_pluginConfig['pluginNamespace'] . $name . "\\" . $class;
+                $namespace = self::$_pluginConfig['pluginNamespace'] . "\\" . $name . "\\" . $class;
         }
         return class_exists($namespace) ? $namespace : '';
     }
@@ -319,7 +344,7 @@ class Common
     public static function setPluginInfo($name, $array)
     {
         $file = self::pluginPath($name) . DIRECTORY_SEPARATOR . 'info.ini';
-        $plugin = self::getPluginInfo($name);
+        $plugin = self::getPluginInstance($name);
         $array = $plugin->setInfo($name, $array);
         $res = array();
         foreach ($array as $key => $val) {
@@ -391,9 +416,10 @@ class Common
                 continue;
             }
             if (!isset(\Yii::$app->i18n->translations[$key . '*'])) {
+                $path = \Yii::getAlias(Common::$_pluginConfig['pluginRoot'] . DIRECTORY_SEPARATOR . $key);
                 $fileMap = Common::getCache($key . '.messages', 'plugins');
                 if (!$fileMap) {
-                    $files = FileHelper::findFiles($plugin['path'], ['only' => ['controllers/*.php']]);
+                    $files = FileHelper::findFiles($path, ['only' => ['controllers/*.php']]);
                     $fileMap = [
                         $key => $key . ".php",
                     ];
@@ -407,7 +433,7 @@ class Common
                 }
                 \Yii::$app->i18n->translations[$key . '*'] = [
                     'class' => 'yii\i18n\PhpMessageSource',
-                    'basePath' => $plugin['path'] . DIRECTORY_SEPARATOR . 'messages',
+                    'basePath' => $path . DIRECTORY_SEPARATOR . 'messages',
                     'fileMap' => $fileMap,
                 ];
             }
