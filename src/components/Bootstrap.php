@@ -34,9 +34,23 @@ class Bootstrap implements BootstrapInterface
 
         Hook::listen('plugins_init_begin');
 
-        // 判断是否有插件信息
-        if (!Common::getCache(null, 'plugins')){
-            self::pluginsBind($app);
+        // 绑定插件信息
+        $plugins = Common::getCache(null, 'plugins');
+        if ($plugins && !YII_DEBUG) {
+            foreach ($plugins as $info) {
+                if ($info['state']) {
+                    self::pluginsBind($info);
+                }
+            }
+        } else {
+            $files = FileHelper::findFiles(\Yii::getAlias(Common::$_pluginConfig['pluginRoot']), ['only' => ['/*/info.ini']]);
+            foreach ($files as $file) {
+                $info = Common::parse($file);
+                Common::setCache($info['name'], $info, 'plugins');
+                if ($info['state']) {
+                    self::pluginsBind($info);
+                }
+            }
         }
 
         // 加载插件路由
@@ -94,48 +108,38 @@ class Bootstrap implements BootstrapInterface
 
     /**
      * 插件绑定事件和钩子
-     * @param $app
+     * @param
      * @return array|null
      */
-    public static function pluginsBind($app)
+    public static function pluginsBind($info)
     {
-        $files = FileHelper::findFiles(\Yii::getAlias(Common::$_pluginConfig['pluginRoot']), ['only' => ['/*/info.ini']]);
-        if (empty($files)) return [];
+        $classNamespace = Common::$_pluginConfig['pluginNamespace'] . '\\' . $info['name'] . '\\' . Common::parseName($info['name'], 1);
+        if (class_exists($classNamespace)) {
+            $class = new $classNamespace();
+            if ($class instanceof Plugin) {
 
-        foreach ($files as $file) {
-            $params = Common::parse($file);
-            Common::setCache($params['name'], $params, 'plugins');
-            if (!$params['state']) {
-                continue;
-            }
+                // 导入插件配置
+                Common::getPluginConfig($info['name']);
 
-            $classNamespace = Common::$_pluginConfig['pluginNamespace'] . '\\' . $params['name'] . '\\' . Common::parseName($params['name'], 1);
-            if (class_exists($classNamespace)) {
-                $class = new $classNamespace();
-                if ($class instanceof Plugin) {
-                    // 导入插件配置
-                    Common::getPluginConfig($params['name']);
-
-                    // 绑定钩子
-                    if ($class->hooks()) {
-                        foreach ($class->hooks() as $name => $value) {
-                            self::$_hooks[$name] = [$classNamespace, $value];
-                        }
+                // 绑定钩子
+                if ($class->hooks()) {
+                    foreach ($class->hooks() as $name => $value) {
+                        self::$_hooks[$name] = [$classNamespace, $value];
                     }
+                }
 
-                    // 绑定事件
-                    if ($class->events()) {
-                        foreach ($class->events() as $className => $events) {
-                            foreach ($events as $eventName => $event) {
-                                foreach ($event as $value) {
-                                    $value = is_array($value) ? $value : [$value];
-                                    if (count($value) > 1) {
-                                        $data = isset($value[1]) ? $value[1] : null;
-                                        $append = isset($value[2]) ? $value[2] : true;
-                                        self::$_events[$className][$eventName][] = [[$classNamespace, $value[0]], $data, $append];
-                                    } else {
-                                        self::$_events[$className][$eventName][] = [$classNamespace, $value[0]];
-                                    }
+                // 绑定事件
+                if ($class->events()) {
+                    foreach ($class->events() as $className => $events) {
+                        foreach ($events as $eventName => $event) {
+                            foreach ($event as $value) {
+                                $value = is_array($value) ? $value : [$value];
+                                if (count($value) > 1) {
+                                    $data = isset($value[1]) ? $value[1] : null;
+                                    $append = isset($value[2]) ? $value[2] : true;
+                                    self::$_events[$className][$eventName][] = [[$classNamespace, $value[0]], $data, $append];
+                                } else {
+                                    self::$_events[$className][$eventName][] = [$classNamespace, $value[0]];
                                 }
                             }
                         }
