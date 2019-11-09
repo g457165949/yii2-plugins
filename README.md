@@ -38,6 +38,11 @@ Yii模块配置
 Once the extension is installed, simply use it in your code by :
 
 ```php
+    //插件别名配置
+    'aliases' => [
+        '@plugins' => dirname(__DIR__).'/plugins',
+    ],
+    ......
     //模块配置
     'modules'=>[
         'plugins' => [
