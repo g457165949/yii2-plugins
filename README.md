@@ -35,7 +35,7 @@ to the require section of your `composer.json` file.
 Yii模块配置
 -----
 
-Once the extension is installed, simply use it in your code by :
+Once the extension is installed, simply use it in your config/web.php code by :
 
 ```php
     //插件别名配置

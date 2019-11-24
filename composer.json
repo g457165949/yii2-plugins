@@ -20,6 +20,6 @@
     }
   },
   "extra": {
-    "bootstrap": "zyh\\plugins\\components\\HookBootstrap"
+    "bootstrap": "zyh\\plugins\\components\\Bootstrap"
   }
 }
