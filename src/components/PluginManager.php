@@ -25,6 +25,7 @@ class PluginManager extends PluginManagerBase
 
         // 下载
         $tmpFile = $this->download($name, $extend);
+
         // 解压
         $plauginsDir = $this->unzip($name);
         // 移除临时文件
@@ -99,7 +100,7 @@ class PluginManager extends PluginManagerBase
     {
         $info = Common::getPluginInfo($name);
         if ($info['state']) {
-            throw new \Exception('Please disable plugin first');
+            throw new \Exception(Common::t('Please disable plugin first'));
         }
 
         $config = Common::getPluginConfig($name);
@@ -137,6 +138,7 @@ class PluginManager extends PluginManagerBase
                     $plugin->upgrade();
                 }
             }
+
         } catch (Exception $e) {
             throw new Exception($e->getMessage());
         }

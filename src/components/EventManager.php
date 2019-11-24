@@ -19,7 +19,12 @@ class EventManager extends Component
      * an array with structure: [
      *      $eventSenderClassName => [
      *          $eventName => [
-     *              [$handlerClassName, $handlerMethodName]
+     *              $handlerMethodName
+     *          ],
+     *          // 或者
+     *          $eventName => [
+     *              //[方法名,方法参数,是否继续执行(true/false)]
+     *              [$handlerMethodName , $handlerMethodParams , $handler]
      *          ]
      *      ]
      * ]
@@ -34,7 +39,6 @@ class EventManager extends Component
     public function init()
     {
         parent::init();
-        // var_dump($this->events);
         $this->attachEvents($this->events);
     }
 
@@ -47,8 +51,8 @@ class EventManager extends Component
             foreach ($events as $eventName => $handlers) {
                 foreach ($handlers as $handler) {
                     if (is_array($handler) && is_callable($handler[0])) {
-                        $data = isset($handler[1]) ? array_pop($handler) : null;
-                        $append = isset($handler[2]) ? array_pop($handler) : null;
+                        $data = isset($handler[1]) ? $handler[1] : null;
+                        $append = isset($handler[2]) ? $handler[2] : null;
                         Event::on($className, $eventName, $handler[0], $data, $append);
                     } else if (is_callable($handler)) {
                         Event::on($className, $eventName, $handler);

@@ -174,7 +174,7 @@ class PluginManagerBase
 
                 $tempLine .= $line;
                 if (substr(trim($line), -1, 1) == ';') {
-                    $tempLine = str_ireplace('__PREFIX__', \Yii::$app->get('db')->tablePrefix . '_', $tempLine);
+                    $tempLine = str_ireplace('__PREFIX__', \Yii::$app->get('db')->tablePrefix, $tempLine);
                     $tempLine = str_ireplace('INSERT INTO ', 'INSERT IGNORE INTO ', $tempLine);
                     try {
                         \Yii::$app->get('db')->createCommand($tempLine)->execute();

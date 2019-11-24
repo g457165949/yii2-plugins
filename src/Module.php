@@ -67,7 +67,7 @@ class Module extends \yii\base\Module
                 'fileMap' => [
                     'plugins/plugins' => 'plugins.php'
                 ],
-                'on missingTranslation' => ['app\components\TranslationEventHandler', 'handleMissingTranslation']
+                'on missingTranslation' => ['zyh\plugins\components\TranslationEventHandler', 'handleMissingTranslation']
             ];
         }
     }

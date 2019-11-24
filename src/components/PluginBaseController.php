@@ -6,6 +6,8 @@
  */
 namespace zyh\plugins\components;
 
+use app\components\KitEvent;
+use yii\base\Event;
 use yii\web\Controller;
 
 class PluginBaseController extends Controller
@@ -13,6 +15,11 @@ class PluginBaseController extends Controller
     public function init()
     {
         parent::init();
+    }
+
+    public function actions()
+    {
+        return Hook::listen('hook_plugin_actions',parent::actions());
     }
 
     public function getViewPath()

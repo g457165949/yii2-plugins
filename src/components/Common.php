@@ -211,7 +211,7 @@ class Common
 
         switch ($type) {
             case 'controller':
-                $namespace = self::$_pluginConfig['pluginNamespace'] . "\\" . $name . "\\controller\\" . $class;
+                $namespace = self::$_pluginConfig['pluginNamespace'] . "\\" . $name . "\\controllers\\" . $class;
                 break;
             default:
                 $namespace = self::$_pluginConfig['pluginNamespace'] . "\\" . $name . "\\" . $class;
