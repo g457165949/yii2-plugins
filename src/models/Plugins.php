@@ -1,30 +1,26 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: admin
- * Date: 2019/1/18
- * Time: 下午11:34
- */
+
 namespace zyh\plugins\models;
 
 use Yii;
+use yii\helpers\ArrayHelper;
+use zyh\plugins\components\Common;
 
 /**
- * This is the model class for table "{{%_plugins}}".
+ * This is the model class for table "{{%plugins}}".
  *
  * @property int $id
- * @property string $name 插件名称
- * @property string $title 插件标题
- * @property string $author 插件作者
- * @property float $price 价格
- * @property int $category_id 插件分类
- * @property string $intro 插件介绍
- * @property string $website 网站地址
- * @property string $version 版本
- * @property string $type 类型
- * @property int $state 状态
- * @property string $url 插件路由地址
- * @property int $createtime
+ * @property string|null $uid
+ * @property string $title
+ * @property string $name
+ * @property string $author
+ * @property string|null $intro
+ * @property string $version
+ * @property string $url
+ * @property int|null $state
+ * @property int|null $category_id
+ * @property int|null $create_time
+ * @property int|null $update_time
  */
 class Plugins extends \yii\db\ActiveRecord
 {
@@ -33,7 +29,7 @@ class Plugins extends \yii\db\ActiveRecord
      */
     public static function tableName()
     {
-        return '{{%_plugins}}';
+        return '{{%plugins}}';
     }
 
     /**
@@ -42,13 +38,10 @@ class Plugins extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['id', 'category_id'], 'required'],
-            [['id', 'category_id', 'state', 'createtime'], 'integer'],
-            [['intro', 'type'], 'string'],
-            [['price'],'number'],
-            [['name', 'author', 'version'], 'string', 'max' => 20],
-            [['title', 'website', 'url'], 'string', 'max' => 100],
-            [['id'], 'unique'],
+            [['title', 'name', 'author', 'version', 'url'], 'required'],
+            [['intro'], 'string'],
+            [['state', 'category_id', 'create_time', 'update_time'], 'integer'],
+            [['uid', 'title', 'name', 'author', 'version', 'url'], 'string', 'max' => 255],
         ];
     }
 
@@ -59,14 +52,34 @@ class Plugins extends \yii\db\ActiveRecord
     {
         return [
             'id' => 'ID',
-            'name' => '插件名称',
-            'title' => '插件标题',
-            'intro' => '插件介绍',
-            'website' => '网站地址',
-            'version' => '版本',
-            'state' => '状态',
-            'url' => '插件路由地址',
-            'createtime' => 'Createtime',
+            'uid' => 'Uid',
+            'title' => Common::T('Title'),
+            'name' => Common::T('Name'),
+            'author' => Common::T('Author'),
+            'intro' => Common::T('Intro'),
+            'version' => Common::T('Version'),
+            'url' => Common::T('Url'),
+            'state' => Common::T('State'),
+            'category_id' => 'Category ID',
+            'create_time' => Common::T('Create Time'),
+            'update_time' => 'Update Time',
         ];
+    }
+
+    public static function dropDownList($key, $value = null)
+    {
+
+        $params = [
+            'category_id' => [
+                1 => '模块',
+                2 => '功能',
+            ],
+            'state' => [
+                0 => '禁用',
+                1 => '启用'
+            ]
+        ];
+
+        return ArrayHelper::getValue($params, isset($value) ? "$key.$value" : "$key");
     }
 }

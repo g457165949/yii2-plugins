@@ -15,6 +15,8 @@ use yii\web\Response;
 use zyh\plugins\components\Common;
 use zyh\plugins\components\Http;
 use zyh\plugins\components\PluginManager;
+use zyh\plugins\models\Plugins;
+use zyh\plugins\models\searchs\PluginsSearch;
 
 class PluginsController extends Controller
 {
@@ -24,18 +26,30 @@ class PluginsController extends Controller
      */
     public function actionIndex()
     {
-        $config = \Yii::$app->view->params['config'];
-        $config['plugins'] = Common::getCache(null, 'plugins', []);
-//        echo '<pre>';var_dump($config);die;
+        $searchModel = new PluginsSearch();
+        $dataProvider = $searchModel->search(\Yii::$app->requestedParams);
 
-        foreach ($config['plugins'] as $k => &$v){
+        $config['plugins'] = Common::getCache(null, 'plugins', []);
+
+        foreach ($config['plugins'] as $k => &$v) {
             $v['config'] = Common::getPluginConfig($v['name']) ? 1 : 0;
         }
 
         \Yii::$app->view->params['config'] = $config;
         return $this->render('/plugins/index', [
-            'config' => $config
+            'config' => $config,
+            'dataProvider' => $dataProvider
         ]);
+    }
+
+    /**
+     * 插件详情
+     * @return string
+     */
+    public function actionView()
+    {
+        $model = Plugins::findOne(\Yii::$app->request->get('id'));
+        return $this->render('/plugins/view', ['model' => $model]);
     }
 
     /**
@@ -125,7 +139,7 @@ class PluginsController extends Controller
         } catch (Exception $e) {
             return Common::error($e->getMessage());
         }
-        return Common::success($info);
+        return Common::success();
     }
 
     /**
@@ -150,17 +164,18 @@ class PluginsController extends Controller
     /**
      * 更新插件
      */
-    public function upgrade()
+    public function actionUpgrade()
     {
+        \Yii::$app->response->format = Response::FORMAT_JSON;
         $name = \Yii::$app->request->post("name");
         if (!$name) {
             return Common::error(Common::t('Parameter %s can not be empty', 'name'));
         }
         try {
-            $uid = $this->request->post("uid");
-            $token = $this->request->post("token");
-            $version = $this->request->post("version");
-            $faversion = $this->request->post("faversion");
+            $uid = \Yii::$app->request->post("uid");
+            $token = \Yii::$app->request->post("token");
+            $version = \Yii::$app->request->post("version");
+            $faversion = \Yii::$app->request->post("faversion");
             $extend = [
                 'uid' => $uid,
                 'token' => $token,
@@ -169,7 +184,7 @@ class PluginsController extends Controller
             ];
             //调用更新的方法
             (new PluginManager())->upgrade($name, $extend);
-            Common::success(Common::t('Operate successful'));
+            return Common::success(Common::t('Operate successful'));
         } catch (\Exception $e) {
             return Common::error($e->getMessage());
         }
@@ -226,7 +241,7 @@ class PluginsController extends Controller
                 unset($config[$index]);
             }
         }
-        return $this->render('config',[
+        return $this->render('config', [
             'plugins' => ['info' => $info, 'config' => $config, 'tips' => $tips]
         ]);
     }

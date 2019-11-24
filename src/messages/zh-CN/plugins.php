@@ -2,7 +2,8 @@
 
 return [
     'Id'                             => 'ID',
-    'Title'                          => '插件名称',
+    'Title'                          => '插件标题',
+    'Name'                           => '插件名',
     'Value'                          => '配置值',
     'Array key'                      => '键',
     'Array value'                    => '值',
@@ -86,4 +87,7 @@ return [
     'Addon already exists'           => '上传的插件已经存在',
     'Unable to open the zip file'    => '无法打开ZIP文件',
     'Unable to extract the file'     => '无法解压ZIP文件',
+    'Please disable plugin first'    => '请先禁用插件',
+//    'Category Id' => '分类',
+    'Create Time' => '创建时间'
 ];
