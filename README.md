@@ -1,16 +1,17 @@
 Plugins
 =======
-这是一个基于Yii插件的管理系统,可使用Yii自带的事件及自定义钩子hooks来创建自定义的插件
+这是一个基于Yii的插件管理系统,可使用Yii自带的事件及自定义钩子Hooks来创建自定义的插件
 
 ## **主要特性**
 
 * 基于Yii模块创建的插件管理系统
-    * 支持Yii的事件的使用
+    * 支持Yii的局部、全局、超类事件的使用
     * 支持Hook的使用
-    * 支持插件自定义国际化语义
-    * 支持插件自定义模板页面
-    * 支持插件自定义布局
-    * 支持插件自定义安装sql
+    * 支持自定义国际化语义
+    * 支持自定义模板页面
+    * 支持自定义布局
+    * 支持自定义安装sql文件
+    * 支持安装、卸载、更新、禁用、启用时自定义的方法
 
 安装
 ------------ 
@@ -55,6 +56,7 @@ Once the extension is installed, simply use it in your code by :
                 'apiUrl' => 'http://30071.dev.91gaoding.com/api/plugins',
                 // 插件下载接口(返回插件下载地址)
                 'downloadUrl' => 'http://30071.dev.91gaoding.com/plugins/download'
+                // 返回json {"data":{"download":url}}
             ],
             */
             
