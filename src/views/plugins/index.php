@@ -22,16 +22,9 @@ $this->params['breadcrumbs'][] = $this->title;
             <?= Html::a('Create Plugins', ['create'], ['class' => 'btn btn-success']) ?>
         </p>
 
-        <?php // echo $this->render('_search', ['model' => $searchModel]); ?>
-
         <?= GridView::widget([
             'dataProvider' => $dataProvider,
-//        'filterModel' => $searchModel,
             'columns' => [
-//            ['class' => 'yii\grid\SerialColumn'],
-
-                'id',
-                'uid',
                 'title',
                 'name',
                 'author',
@@ -42,24 +35,32 @@ $this->params['breadcrumbs'][] = $this->title;
                         return ArrayHelper::getValue($config['plugins'],$model->name)['version']?:"";
                     }
                 ],
-//                'version',
                 [
                     'label' => '最新版本',
                     'value' => function($model){
                         return $model->version;
                     }
                 ],
-//            'url:url',
-//            'state',
-//                'category_id',
                 [
                     'label' => '分类',
                     'value' => function($model) {
                         return Plugins::dropDownList('category_id',$model->category_id);
                     }
                 ],
-                'create_time:datetime',
-                //'update_time:datetime',
+                [
+                    'label' => '状态',
+                    'value' => function($model) use ($config){
+                        $info = ArrayHelper::getValue($config, "plugins.{$model->name}");
+                        if($info){
+                            if($info['state'] == 1){
+                                return "已启用";
+                            }else{
+                                return "已禁用";
+                            }
+                        }
+                        return "未安装";
+                    }
+                ],
                 [
                     'class' => 'yii\grid\ActionColumn',
                     'header' => '操作',

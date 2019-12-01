@@ -15,7 +15,6 @@ class TestController extends PluginBaseController
 {
     public function actionIndex()
     {
-        echo Fun::T('test');die;
-        return $this->render('test');
+        return $this->render('test/index');
     }
 }

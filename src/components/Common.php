@@ -15,12 +15,6 @@ use yii\helpers\FileHelper;
 class Common
 {
     /**
-     * 插件module配置信息
-     * @var array
-     */
-    public static $_pluginConfig = [];
-
-    /**
      * 插件语义翻译
      * @param $msg
      * @param $params
@@ -99,7 +93,7 @@ class Common
      */
     public static function getCache($key = null, $category, $default = null)
     {
-        $config = \Yii::$app->cache->get($category);
+        $config = Configs::instance()->cache->get($category);
         return $config ? ($key ? ArrayHelper::getValue($config, $key, $default) : $config) : $default;
     }
 
@@ -118,7 +112,7 @@ class Common
         } else {
             $config = $value;
         }
-        return \Yii::$app->cache->set($category, $config, $duration);
+        return Configs::instance()->cache->set($category, $config, $duration);
     }
 
     /**
@@ -131,9 +125,9 @@ class Common
         if ($key) {
             $config = self::getCache('', $category);
             ArrayHelper::remove($config, $key);
-            return \Yii::$app->cache->set($category, $config);
+            return Configs::instance()->cache->set($category, $config);
         } else {
-            return \Yii::$app->cache->delete($category);
+            return Configs::instance()->cache->delete($category);
         }
     }
 
@@ -151,8 +145,8 @@ class Common
     /**
      * 解析配置文件或内容
      * @access public
-     * @param  string $config 配置文件路径或内容
-     * @param  string $type 配置解析类型
+     * @param string $config 配置文件路径或内容
+     * @param string $type 配置解析类型
      * @return mixed
      */
     public static function parse($config, $type = '')
@@ -170,9 +164,9 @@ class Common
      * 字符串命名风格转换
      * type 0 将 Java 风格转换为 C 的风格 1 将 C 风格转换为 Java 的风格
      * @access public
-     * @param  string $name 字符串
-     * @param  integer $type 转换类型
-     * @param  bool $ucfirst 首字母是否大写（驼峰规则）
+     * @param string $name 字符串
+     * @param integer $type 转换类型
+     * @param bool $ucfirst 首字母是否大写（驼峰规则）
      * @return string
      */
     public static function parseName($name, $type = 0, $ucfirst = true)
@@ -211,10 +205,10 @@ class Common
 
         switch ($type) {
             case 'controller':
-                $namespace = self::$_pluginConfig['pluginNamespace'] . "\\" . $name . "\\controllers\\" . $class;
+                $namespace = Configs::instance()->pluginNamespace . "\\" . $name . "\\controllers\\" . $class;
                 break;
             default:
-                $namespace = self::$_pluginConfig['pluginNamespace'] . "\\" . $name . "\\" . $class;
+                $namespace = Configs::instance()->pluginNamespace . "\\" . $name . "\\" . $class;
         }
         return class_exists($namespace) ? $namespace : '';
     }
@@ -343,7 +337,7 @@ class Common
      */
     public static function setPluginInfo($name, $array)
     {
-        $file = self::pluginPath($name) . DIRECTORY_SEPARATOR . 'info.ini';
+        $file = self::pluginPath($name) . DIRECTORY_SEPARATOR . Configs::instance()->pluginFile;
         $plugin = self::getPluginInstance($name);
         $array = $plugin->setInfo($name, $array);
         $res = array();
@@ -384,60 +378,5 @@ class Common
         } else {
             return null;
         }
-    }
-
-    /**
-     * 初始化插件路由
-     * @param $name
-     */
-    public static function initPluginsUrlRules()
-    {
-        $urlRules = self::getCache('', 'pluginsUrlRules', []);
-        $plugins = self::getCache('', 'plugins', []);
-        if (empty($urlRules) && $plugins) {
-            foreach ($plugins as $key => $plugin) {
-                $urlRules["{$key}/<a:\w+>"] = "plugins/{$key}/{$key}/<a>";
-                $urlRules["{$key}/<controller:\w+>/<a:\w+>"] = "plugins/{$key}/<controller>/<a>";
-            }
-            self::setCache('', $urlRules, 'pluginsUrlRules');
-        }
-        \Yii::$app->urlManager->addRules($urlRules);
-    }
-
-    /**
-     * 插件国际化语义初始化
-     * @param string $name
-     */
-    public static function initPluginsMessages()
-    {
-        $plugins = self::getCache('', 'plugins', []);
-        foreach ($plugins as $key => $plugin) {
-            if (empty($plugin)) {
-                continue;
-            }
-            if (!isset(\Yii::$app->i18n->translations[$key . '*'])) {
-                $path = \Yii::getAlias(Common::$_pluginConfig['pluginRoot'] . DIRECTORY_SEPARATOR . $key);
-                $fileMap = Common::getCache($key . '.messages', 'plugins');
-                if (!$fileMap) {
-                    $files = FileHelper::findFiles($path, ['only' => ['controllers/*.php']]);
-                    $fileMap = [
-                        $key => $key . ".php",
-                    ];
-                    foreach ($files as $file) {
-                        $fileInfo = pathinfo($file);
-                        $controllerName = strtolower(str_replace('Controller', '', $fileInfo['filename']));
-                        $uri = ($key == $controllerName ? $key : $key . DIRECTORY_SEPARATOR . $controllerName);
-                        $fileMap[$uri] = $controllerName . '.php';
-                    }
-                    Common::setCache($key . '.messages', $fileMap, 'plugins');
-                }
-                \Yii::$app->i18n->translations[$key . '*'] = [
-                    'class' => 'yii\i18n\PhpMessageSource',
-                    'basePath' => $path . DIRECTORY_SEPARATOR . 'messages',
-                    'fileMap' => $fileMap,
-                ];
-            }
-        }
-//        var_dump(\Yii::$app->i18n->translations);die;
     }
 }

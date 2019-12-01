@@ -10,6 +10,7 @@ namespace zyh\plugins;
 
 
 use zyh\plugins\components\Common;
+use zyh\plugins\components\Configs;
 
 class Module extends \yii\base\Module
 {
@@ -18,29 +19,7 @@ class Module extends \yii\base\Module
      * @var string
      */
     public $pluginId = '';
-    /**
-     * 插件路径
-     * @var string
-     */
-    public $pluginRoot = '@app/plugins';
 
-    /**
-     * 插件命名
-     * @var string
-     */
-    public $pluginNamespace = 'app\plugins';
-
-    /**
-     * 插件文件
-     * @var string
-     */
-    public $pluginFile = 'info.ini';
-
-    /**
-     * 插件下载地址
-     * @var string
-     */
-    public $pluginDownloadUrl = '';
 
     public function init()
     {
@@ -51,7 +30,7 @@ class Module extends \yii\base\Module
         // 判断是否是已安装的插件路由
         if ($array[0] != $array[1] && Common::getPluginClass($array[1])) {
             $this->pluginId = $array[1];
-            $this->controllerNamespace = $this->pluginNamespace . '\\' . strtolower($array[1]);
+            $this->controllerNamespace = Configs::instance()->pluginNamespace . '\\' . strtolower($array[1]);
             $this->setPluginViewPath();
         }
         \Yii::setAlias('@module',dirname(__FILE__));
@@ -92,7 +71,7 @@ class Module extends \yii\base\Module
      */
     public function setPluginViewPath()
     {
-        $path = \Yii::getAlias(rtrim($this->pluginRoot, '/')) . DIRECTORY_SEPARATOR . $this->pluginId . DIRECTORY_SEPARATOR . 'views';
+        $path = \Yii::getAlias(rtrim(Configs::instance()->pluginRoot, '/')) . DIRECTORY_SEPARATOR . $this->pluginId . DIRECTORY_SEPARATOR . 'views';
         if (is_dir($path)) {
             $this->setViewPath($path);
         }

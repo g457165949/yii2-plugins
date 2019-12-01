@@ -1,6 +1,7 @@
 <?php
+
 namespace app\plugins\menu\controllers;
-use app\components\Fun;
+
 use zyh\plugins\components\PluginBaseController;
 
 /**
@@ -12,8 +13,17 @@ use zyh\plugins\components\PluginBaseController;
 class MenuController extends PluginBaseController
 {
 
-    public function actionIndex(){
-        echo Fun::T('test1');die;
+//    public function actions()
+//    {
+//        return StaticFun::kitActions(['stop']);
+//    }
+
+    public function actionStop(){
+        echo "show menu kit new stop2 run 。。。。。";die;
+    }
+
+    public function actionIndex()
+    {
         return $this->render('menu/index');
     }
 }
