@@ -74,8 +74,11 @@ Once the extension is installed, simply use it in your config/web.php code by :
     ]
 ```
 
-导入数据库运行
+导入数据库
+-----
+```shell
 ./yii migrate --migrationPath=@zyh/plugins/migrations
+```
 
 使用方式
 -----
