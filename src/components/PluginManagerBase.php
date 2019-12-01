@@ -195,7 +195,7 @@ class PluginManagerBase
      */
     protected static function getServerUrl()
     {
-        return Common::$_pluginConfig['params']['downloadUrl'];
+        return Configs::instance()->pluginDownloadUrl;
     }
 
     /**
