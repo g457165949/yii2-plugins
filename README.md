@@ -33,14 +33,14 @@ or add
 to the require section of your `composer.json` file.
 
 
-Yii模块配置
+配置项
 -----
 
 Once the extension is installed, simply use it in your config/web.php code by :
 
 ```php
-    // 插件自定义配置(默认不用配置)，如需自定义请修改其中项
     'params' => [
+         // 插件自定义配置(默认不用配置)，如需自定义请修改其中项
         'zyh.plugins.configs' => [
             'db' => 'db' // 配置中的db组件名
             'cache' => 'cache' //配置中的cache组件名
