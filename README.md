@@ -47,7 +47,7 @@ Once the extension is installed, simply use it in your config/web.php code by :
             'pluginsTable' => 'plugins' // 插件表名
             'pluginNamespace' => 'app\plugins' // 插件所在的命名空间
             'pluginRoot => '@app/plugins'' // 插件所在的物理路径，支持别名
-            'pluginScope' => ['basic'] // 项目范围，配置中的id名称（默认所有项目，如需单个项目使用，请填写项目ID）
+            'pluginScope' => [] // 项目范围 (默认所有项目，如需个别项目使用，请填写项目配置文件中的id）
             ......   // 其他配置，请见 zyh\plugins\components\Configs.php
         ]
     ]
