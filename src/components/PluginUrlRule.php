@@ -19,9 +19,14 @@ class PluginUrlRule extends BaseObject implements UrlRuleInterface
 
         $pathArr = explode('/', $request->pathInfo);
 
-        // 插件广场路由规则
-        if (in_array($request->pathInfo, ['plugins/index', 'plugins'])) {
-            return ['plugins/plugins/index', []];
+        // 判断是否是插件市场
+        if($pathArr[0] == 'plugins'){
+            // 插件广场路由规则
+            if (in_array($request->pathInfo, ['plugins/index', 'plugins'])) {
+                return ['plugins/plugins/index', []];
+            }else{
+                return ['plugins/'.$request->pathInfo,[]];
+            }
         }
 
         // 插件路由规则

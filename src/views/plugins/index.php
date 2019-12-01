@@ -67,7 +67,7 @@ $this->params['breadcrumbs'][] = $this->title;
                     'template' => '{view} {install} {uninstall} {upgrade} {state}',
                     'buttons' => [
                         'view' => function ($url, $model, $key) {
-                            return Html::a('详情', ['view', "id" => $model->id]);
+                            return Html::a('详情', ['/plugins/view', "id" => $model->id]);
                         },
                         'install' => function ($url, $model, $key) use ($config) {
                             if (!isset($config['plugins'][$model->name])) {

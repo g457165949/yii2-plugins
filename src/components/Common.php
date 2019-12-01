@@ -80,7 +80,7 @@ class Common
      */
     public static function pluginPath($pluginName = '')
     {
-        $path = \Yii::getAlias(self::$_pluginConfig['pluginRoot']);
+        $path = \Yii::getAlias(Configs::instance()->pluginRoot);
         return $pluginName ? $path . DIRECTORY_SEPARATOR . $pluginName : $path;
     }
 
