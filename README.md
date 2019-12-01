@@ -39,10 +39,18 @@ Yii模块配置
 Once the extension is installed, simply use it in your config/web.php code by :
 
 ```php
-    //插件别名配置
-    'aliases' => [
-        '@plugins' => dirname(__DIR__).'/plugins',
-    ],
+    // 插件自定义配置(默认不用配置)，如需自定义请修改其中项
+    'params' => [
+        'zyh.plugins.configs' => [
+            'db' => 'db' // 配置中的db组件名
+            'cache' => 'cache' //配置中的cache组件名
+            'pluginsTable' => 'plugins' // 插件表名
+            'pluginNamespace' => 'app\plugins' // 插件所在的命名空间
+            'pluginRoot => '@app/plugins'' // 插件所在的物理路径，支持别名
+            'pluginScope' => ['basic'] // 项目范围，配置中的id名称（默认所有项目，如需单个项目使用，请填写项目ID）
+            ......   // 其他配置，请见 zyh\plugins\components\Configs.php
+        ]
+    ]
     ......
     //模块配置
     'modules'=>[
@@ -56,23 +64,11 @@ Once the extension is installed, simply use it in your config/web.php code by :
                     'class' => 'app\controllers\PluginsController',
                 ]
             ],
-            'params' => [
-                // 插件广场接口
-                'apiUrl' => 'http://30071.dev.91gaoding.com/api/plugins',
-                // 插件下载接口(返回插件下载地址)
-                'downloadUrl' => 'http://30071.dev.91gaoding.com/plugins/download'
-            ],
-            */
-            
-            /*
              // 可自定义自己页面位置
             'layout' => 'main', // 布局名称
             'layoutPath' => '@app/views/layouts', // 布局位置
             'viewPath' => '@app/views', // 页面位置
             */
-            
-            'pluginRoot' => '@app/plugins', ##放置插件的namespace目录
-            'pluginNamespace' => 'app\plugins',  ##放置插件的namespace
         ],
         ...
     ]
